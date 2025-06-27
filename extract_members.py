@@ -2,6 +2,8 @@ import json
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.types import ChannelParticipantsSearch
+from telethon.tl.functions.messages import GetDialogsRequest
+from telethon.tl.types import InputPeerEmpty
 
 async def extract_members(api_id, api_hash, phone):
     client = TelegramClient(phone, int(api_id), api_hash)
@@ -9,23 +11,49 @@ async def extract_members(api_id, api_hash, phone):
     await client.start()
     print("Cliente conectado.")
 
-    # Solicitar o nome de usuário ou ID do grupo
-    group_input = input("Digite o nome de usuário ou ID do grupo (ex: @meugrupo ou -123456789): ")
+    chats = []
+    last_date = None
+    chunk_size = 200
 
-    try:
-        if group_input.startswith("@"):
-            entity = await client.get_entity(group_input)
-        else:
-            entity = await client.get_entity(int(group_input))
-    except Exception as e:
-        print(f"Erro ao obter a entidade do grupo: {e}")
-        return
+    print("Obtendo seus grupos e canais...")
+    while True:
+        result = await client(GetDialogsRequest(
+            offset_date=last_date,
+            offset_id=0,
+            offset_peer=InputPeerEmpty(),
+            limit=chunk_size,
+            hash=0
+        ))
+        chats.extend(result.chats)
 
-    if not hasattr(entity, 'participants_count'):
-        print("A entidade fornecida não é um grupo ou canal válido para extração de membros.")
-        return
+        if not result.chats:
+            break
+        last_date = result.chats[-1].date
 
-    print(f"Extraindo membros do grupo: {entity.title} ({entity.id})")
+    groups = []
+    for chat in chats:
+        try:
+            if hasattr(chat, 'megagroup') and chat.megagroup == True or hasattr(chat, 'channel') and chat.channel == True:
+                groups.append(chat)
+        except:
+            continue
+
+    print("\nSelecione o grupo/canal para extrair membros:")
+    for i, g in enumerate(groups):
+        print(f"{i}. {g.title}")
+
+    while True:
+        try:
+            g_index = int(input("Digite o número do grupo/canal: "))
+            if 0 <= g_index < len(groups):
+                target_group = groups[g_index]
+                break
+            else:
+                print("Número inválido. Por favor, tente novamente.")
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+
+    print(f"Extraindo membros do grupo: {target_group.title} ({target_group.id})")
 
     all_participants = []
     offset = 0
@@ -33,8 +61,8 @@ async def extract_members(api_id, api_hash, phone):
 
     while True:
         participants = await client(GetParticipantsRequest(
-            entity,
-            ChannelParticipantsSearch(''),
+            target_group,
+            ChannelParticipantsSearch(""),
             offset,
             limit,
             hash=0
@@ -44,15 +72,15 @@ async def extract_members(api_id, api_hash, phone):
         all_participants.extend(participants.users)
         offset += len(participants.users)
 
-    with open('members.json', 'w', encoding='utf-8') as f:
+    with open("members.json", "w", encoding="utf-8") as f:
         members_data = []
         for user in all_participants:
             member_info = {
-                'id': user.id,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'username': user.username,
-                'phone': user.phone
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "username": user.username,
+                "phone": user.phone
             }
             members_data.append(member_info)
         json.dump(members_data, f, ensure_ascii=False, indent=4)
