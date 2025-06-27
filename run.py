@@ -71,9 +71,9 @@ def main():
 
         choice = input("Escolha uma opção: ")
 
-        if choice == \'1\':
+        if choice == '1':
             add_new_account()
-        elif choice == \'2\':
+        elif choice == '2':
             selected_account = select_account()
             if selected_account:
                 api_id = selected_account["api_id"]
@@ -88,25 +88,25 @@ def main():
 
                     op_choice = input("Escolha uma operação: ")
 
-                    if op_choice == \'1\':
+                    if op_choice == '1':
                         print("Executando script de extração de membros...")
                         asyncio.run(extract_members(api_id, api_hash, phone))
                         break # Retorna ao menu principal após a conclusão
-                    elif op_choice == \'2\':
+                    elif op_choice == '2':
                         print("Executando script de adição de membros...")
                         asyncio.run(add_members(api_id, api_hash, phone))
                         break # Retorna ao menu principal após a conclusão
-                    elif op_choice == \'3\':
+                    elif op_choice == '3':
                         break
                     else:
                         print("Opção inválida. Por favor, tente novamente.")
-        elif choice == \'3\':
+        elif choice == '3':
             print("Saindo...")
             break
         else:
             print("Opção inválida. Por favor, tente novamente.")
 
-if __name__ == \'__main__\':
+if __name__ == '__main__':
     main()
 
 
