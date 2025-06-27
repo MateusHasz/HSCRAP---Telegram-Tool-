@@ -37,7 +37,7 @@ def add_new_account():
         "phone": phone
     }
     save_credentials(credentials)
-    print(f"Conta '{account_name}' salva com sucesso.")
+    print(f"Conta \'{account_name}\' salva com sucesso.")
 
 def select_account():
     credentials = load_credentials()
@@ -55,7 +55,7 @@ def select_account():
             choice = int(input("Escolha o número da conta que deseja usar: "))
             if 1 <= choice <= len(accounts):
                 selected_name = accounts[choice - 1]
-                print(f"Conta '{selected_name}' selecionada.")
+                print(f"Conta \'{selected_name}\' selecionada.")
                 return credentials[selected_name]
             else:
                 print("Escolha inválida. Por favor, digite um número válido.")
@@ -71,9 +71,9 @@ def main():
 
         choice = input("Escolha uma opção: ")
 
-        if choice == '1':
+        if choice == \'1\':
             add_new_account()
-        elif choice == '2':
+        elif choice == \'2\':
             selected_account = select_account()
             if selected_account:
                 api_id = selected_account["api_id"]
@@ -88,23 +88,25 @@ def main():
 
                     op_choice = input("Escolha uma operação: ")
 
-                    if op_choice == '1':
+                    if op_choice == \'1\':
                         print("Executando script de extração de membros...")
                         asyncio.run(extract_members(api_id, api_hash, phone))
-                    elif op_choice == '2':
+                        break # Retorna ao menu principal após a conclusão
+                    elif op_choice == \'2\':
                         print("Executando script de adição de membros...")
                         asyncio.run(add_members(api_id, api_hash, phone))
-                    elif op_choice == '3':
+                        break # Retorna ao menu principal após a conclusão
+                    elif op_choice == \'3\':
                         break
                     else:
                         print("Opção inválida. Por favor, tente novamente.")
-        elif choice == '3':
+        elif choice == \'3\':
             print("Saindo...")
             break
         else:
             print("Opção inválida. Por favor, tente novamente.")
 
-if __name__ == '__main__':
+if __name__ == \'__main__\':
     main()
 
 
