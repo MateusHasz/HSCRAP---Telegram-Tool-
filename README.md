@@ -4,7 +4,7 @@ Este guia detalha como usar a ferramenta Python para extrair membros de grupos d
 
 ## Pré-requisitos
 
-1.  **Termux**: Instale o Termux na sua no F-Droid.
+1.  **Termux**: Instale o Termux atraves desse link --> https://devuploads.com/y6te5vhbshj6 (o da Playstore não funciona)
 2.  **Python**: O Python 3 deve estar instalado no seu Termux. Você pode instalá-lo com `pkg install python`.
 3.  **Telethon**: A biblioteca Telethon é essencial para interagir com a API do Telegram. Será instalada automaticamente.
 4.  **Credenciais da API do Telegram**: Você precisará do seu `api_id` e `api_hash`. Obtenha-os em [my.telegram.org/apps](https://my.telegram.org/apps).
