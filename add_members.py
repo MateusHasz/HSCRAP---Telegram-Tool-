@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import random
@@ -6,21 +5,9 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import InviteToChannelRequest
 from telethon.errors import PeerFloodError, UserPrivacyRestrictedError, UserAlreadyParticipantError
 
-# Carregar configurações de variáveis de ambiente
-api_id = os.environ.get("TELEGRAM_API_ID")
-api_hash = os.environ.get("TELEGRAM_API_HASH")
-phone = os.environ.get("TELEGRAM_PHONE_NUMBER")
+async def add_members(api_id, api_hash, phone):
+    client = TelegramClient(phone, int(api_id), api_hash)
 
-if not all([api_id, api_hash, phone]):
-    print("Por favor, defina as variáveis de ambiente TELEGRAM_API_ID, TELEGRAM_API_HASH e TELEGRAM_PHONE_NUMBER.")
-    print("Exemplo: export TELEGRAM_API_ID=\"1234567\"")
-    print("Exemplo: export TELEGRAM_API_HASH=\"abcdef1234567890abcdef1234567890\"")
-    print("Exemplo: export TELEGRAM_PHONE_NUMBER=\"+5511987654321\"")
-    exit(1)
-
-client = TelegramClient(phone, int(api_id), api_hash)
-
-async def main():
     await client.start()
     print("Cliente conectado.")
 
@@ -87,7 +74,8 @@ async def main():
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    # Este bloco não será usado diretamente, pois run.py chamará a função add_members
+    # Mas é mantido para compatibilidade ou testes individuais
+    print("Este script deve ser executado via run.py para gerenciamento de credenciais.")
 
 
