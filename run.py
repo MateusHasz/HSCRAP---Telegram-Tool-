@@ -62,7 +62,7 @@ def select_account():
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
 
-def main():
+async def main(): # Alterado para função assíncrona
     while True:
         print("\n--- Menu Principal ---")
         print("1. Adicionar nova conta Telegram")
@@ -90,12 +90,12 @@ def main():
 
                     if op_choice == '1':
                         print("Executando script de extração de membros...")
-                        asyncio.run(extract_members(api_id, api_hash, phone))
-                        break # Retorna ao menu principal após a conclusão
+                        await extract_members(api_id, api_hash, phone) # Alterado para await
+                        break
                     elif op_choice == '2':
                         print("Executando script de adição de membros...")
-                        asyncio.run(add_members(api_id, api_hash, phone))
-                        break # Retorna ao menu principal após a conclusão
+                        await add_members(api_id, api_hash, phone) # Alterado para await
+                        break
                     elif op_choice == '3':
                         break
                     else:
@@ -107,6 +107,6 @@ def main():
             print("Opção inválida. Por favor, tente novamente.")
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
 
 
