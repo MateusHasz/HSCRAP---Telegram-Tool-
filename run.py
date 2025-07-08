@@ -1,112 +1,112 @@
-import os
-import sys
+
 import json
-import asyncio
-from extract_members import extract_members
-from add_members import add_members
+import time
+import random
+from telethon.sync import TelegramClient
+from telethon.tl.functions.channels import InviteToChannelRequest
+from telethon.errors import PeerFloodError, UserPrivacyRestrictedError, UserAlreadyParticipantError
 
-CREDENTIALS_FILE = "telegram_credentials.json"
+async def add_members(api_id, api_hash, phone):
+    client = TelegramClient(phone, int(api_id), api_hash)
 
-def load_credentials():
-    if os.path.exists(CREDENTIALS_FILE):
-        with open(CREDENTIALS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    await client.start()
+    print("Cliente conectado.")
 
-def save_credentials(credentials):
-    with open(CREDENTIALS_FILE, "w", encoding="utf-8") as f:
-        json.dump(credentials, f, ensure_ascii=False, indent=4)
+    # Solicitar o nome de usuário ou ID do grupo de destino
+    target_group_input = input("Digite o nome de usuário ou ID do grupo de destino (ex: @meugrupo ou -123456789): ")
 
-def get_user_input(prompt, sensitive=False):
-    if sensitive:
-        import getpass
-        return getpass.getpass(prompt)
-    return input(prompt)
-
-def add_new_account():
-    print("\n--- Adicionar Nova Conta Telegram ---")
-    account_name = input("Digite um nome para esta conta (ex: MinhaContaPrincipal): ")
-    api_id = get_user_input("Digite seu API ID (my.telegram.org/apps): ")
-    api_hash = get_user_input("Digite seu API Hash: ", sensitive=True)
-    phone = get_user_input("Digite seu número de telefone (ex: +5511987654321): ")
-
-    credentials = load_credentials()
-    credentials[account_name] = {
-        "api_id": api_id,
-        "api_hash": api_hash,
-        "phone": phone
-    }
-    save_credentials(credentials)
-    print(f"Conta \'{account_name}\' salva com sucesso.")
-
-def select_account():
-    credentials = load_credentials()
-    if not credentials:
-        print("Nenhuma conta salva. Por favor, adicione uma nova conta primeiro.")
-        return None
-
-    print("\n--- Selecionar Conta Telegram ---")
-    accounts = list(credentials.keys())
-    for i, name in enumerate(accounts):
-        print(f"{i + 1}. {name}")
-
-    while True:
-        try:
-            choice = int(input("Escolha o número da conta que deseja usar: "))
-            if 1 <= choice <= len(accounts):
-                selected_name = accounts[choice - 1]
-                print(f"Conta \'{selected_name}\' selecionada.")
-                return credentials[selected_name]
-            else:
-                print("Escolha inválida. Por favor, digite um número válido.")
-        except ValueError:
-            print("Entrada inválida. Por favor, digite um número.")
-
-def main():
-    while True:
-        print("\n--- Menu Principal ---")
-        print("1. Adicionar nova conta Telegram")
-        print("2. Selecionar e usar conta existente")
-        print("3. Sair")
-
-        choice = input("Escolha uma opção: ")
-
-        if choice == '1':
-            add_new_account()
-        elif choice == '2':
-            selected_account = select_account()
-            if selected_account:
-                api_id = selected_account["api_id"]
-                api_hash = selected_account["api_hash"]
-                phone = selected_account["phone"]
-
-                while True:
-                    print("\n--- Operações da Conta ---")
-                    print("1. Extrair membros de um grupo")
-                    print("2. Adicionar membros a um grupo")
-                    print("3. Voltar ao menu principal")
-
-                    op_choice = input("Escolha uma operação: ")
-
-                    if op_choice == '1':
-                        print("Executando script de extração de membros...")
-                        asyncio.run(extract_members(api_id, api_hash, phone))
-                        break # Retorna ao menu principal após a conclusão
-                    elif op_choice == '2':
-                        print("Executando script de adição de membros...")
-                        asyncio.run(add_members(api_id, api_hash, phone))
-                        break # Retorna ao menu principal após a conclusão
-                    elif op_choice == '3':
-                        break
-                    else:
-                        print("Opção inválida. Por favor, tente novamente.")
-        elif choice == '3':
-            print("Saindo...")
-            break
+    try:
+        if target_group_input.startswith("@"):
+            target_entity = await client.get_entity(target_group_input)
         else:
-            print("Opção inválida. Por favor, tente novamente.")
+            target_entity = await client.get_entity(int(target_group_input))
+    except Exception as e:
+        print(f"Erro ao obter a entidade do grupo de destino: {e}")
+        return
+
+    if not hasattr(target_entity, 'participants_count'):
+        print("A entidade fornecida não é um grupo ou canal válido para adicionar membros.")
+        return
+
+    print(f"Adicionando membros ao grupo: {target_entity.title} ({target_entity.id})")
+
+    # Carregar membros do arquivo members.json (pendentes)
+    try:
+        with open("members.json", "r", encoding="utf-8") as f:
+            all_members = json.load(f)
+    except FileNotFoundError:
+        print("Arquivo members.json não encontrado. Por favor, execute extract_members.py primeiro.")
+        return
+
+    # Carregar membros já adicionados
+    try:
+        with open("added_members.json", "r", encoding="utf-8") as f:
+            added_members_list = json.load(f)
+    except FileNotFoundError:
+        added_members_list = []
+
+    added_member_ids = {member["id"] for member in added_members_list}
+
+    members_to_add = [member for member in all_members if member["id"] not in added_member_ids]
+
+    print(f"Total de membros a adicionar (excluindo já adicionados): {len(members_to_add)}")
+
+    added_count = 0
+    for member_info in members_to_add:
+        user_id = member_info["id"]
+        username = member_info["username"]
+        first_name = member_info["first_name"]
+
+        if user_id in added_member_ids:
+            print(f"Membro {first_name} (@{username or user_id}) já foi adicionado anteriormente. Pulando.")
+            continue
+
+        try:
+            user_to_add = await client.get_input_entity(user_id)
+            await client(InviteToChannelRequest(target_entity, [user_to_add]))
+            print(f"Adicionado: {first_name} (@{username or user_id})")
+            added_count += 1
+            
+            # Adicionar à lista de membros adicionados
+            added_members_list.append(member_info)
+            with open("added_members.json", "w", encoding="utf-8") as f:
+                json.dump(added_members_list, f, ensure_ascii=False, indent=4)
+
+            # Pequeno atraso para evitar flood
+            time.sleep(random.uniform(5, 15)) 
+
+        except PeerFloodError:
+            print("Erro: Flood detectado. Sua conta pode estar limitada. Aguarde um tempo e tente novamente.")
+            print("Pausa longa para evitar banimento.")
+            time.sleep(random.uniform(600, 1200)) # Pausa de 10 a 20 minutos
+            continue
+        except UserPrivacyRestrictedError:
+            print(f"Não foi possível adicionar {first_name} (@{username or user_id}): Restrição de privacidade do usuário.")
+        except UserAlreadyParticipantError:
+            print(f"{first_name} (@{username or user_id}) já é participante do grupo.")
+            # Se já é participante, considere como adicionado para não tentar novamente
+            added_members_list.append(member_info)
+            with open("added_members.json", "w", encoding="utf-8") as f:
+                json.dump(added_members_list, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"Erro ao adicionar {first_name} (@{username or user_id}): {e}")
+        
+        # Atraso maior a cada X membros para simular comportamento humano
+        if added_count % 10 == 0 and added_count > 0:
+            print(f"Adicionados {added_count} membros. Fazendo uma pausa maior...")
+            time.sleep(random.uniform(60, 180)) # Pausa de 1 a 3 minutos
+
+    # Atualizar members.json (lista de pendentes) após a execução
+    remaining_members = [member for member in all_members if member["id"] not in added_member_ids]
+    with open("members.json", "w", encoding="utf-8") as f:
+        json.dump(remaining_members, f, ensure_ascii=False, indent=4)
+
+    print(f"Processo de adição concluído. Total de membros adicionados nesta sessão: {added_count}")
+    print(f"Membros restantes para adicionar: {len(remaining_members)}")
+    await client.run_until_disconnected()
 
 if __name__ == '__main__':
-    main()
+    print("Este script deve ser executado via run.py para gerenciamento de credenciais.")
+
 
 
