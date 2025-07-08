@@ -4,9 +4,6 @@ import json
 import asyncio
 from extract_members import extract_members
 from add_members import add_members
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.shortcuts import radiolist_dialog
 
 CREDENTIALS_FILE = "telegram_credentials.json"
 
@@ -20,15 +17,15 @@ def save_credentials(credentials):
     with open(CREDENTIALS_FILE, "w", encoding="utf-8") as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
 
-def get_user_input(prompt_text, sensitive=False):
+def get_user_input(prompt, sensitive=False):
     if sensitive:
         import getpass
-        return getpass.getpass(prompt_text)
-    return prompt(prompt_text)
+        return getpass.getpass(prompt)
+    return input(prompt)
 
-async def add_new_account_async(): # Tornando a função assíncrona
+def add_new_account():
     print("\n--- Adicionar Nova Conta Telegram ---")
-    account_name = get_user_input("Digite um nome para esta conta (ex: MinhaContaPrincipal): ")
+    account_name = input("Digite um nome para esta conta (ex: MinhaContaPrincipal): ")
     api_id = get_user_input("Digite seu API ID (my.telegram.org/apps): ")
     api_hash = get_user_input("Digite seu API Hash: ", sensitive=True)
     phone = get_user_input("Digite seu número de telefone (ex: +5511987654321): ")
@@ -42,7 +39,7 @@ async def add_new_account_async(): # Tornando a função assíncrona
     save_credentials(credentials)
     print(f"Conta \'{account_name}\' salva com sucesso.")
 
-async def select_account_async(): # Tornando a função assíncrona
+def select_account():
     credentials = load_credentials()
     if not credentials:
         print("Nenhuma conta salva. Por favor, adicione uma nova conta primeiro.")
@@ -50,45 +47,34 @@ async def select_account_async(): # Tornando a função assíncrona
 
     print("\n--- Selecionar Conta Telegram ---")
     accounts = list(credentials.keys())
-    
-    values = [(name, name) for name in accounts]
-    
-    if not values:
-        print("Nenhuma conta disponível para seleção.")
-        return None
+    for i, name in enumerate(accounts):
+        print(f"{i + 1}. {name}")
 
-    selected_name = await radiolist_dialog(
-        title="Selecionar Conta",
-        text="Escolha a conta que deseja usar:",
-        values=values
-    ).run_async() # Usando run_async()
+    while True:
+        try:
+            choice = int(input("Escolha o número da conta que deseja usar: "))
+            if 1 <= choice <= len(accounts):
+                selected_name = accounts[choice - 1]
+                print(f"Conta \'{selected_name}\' selecionada.")
+                return credentials[selected_name]
+            else:
+                print("Escolha inválida. Por favor, digite um número válido.")
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
 
-    if selected_name:
-        print(f"Conta \'{selected_name}\' selecionada.")
-        return credentials[selected_name]
-    else:
-        print("Nenhuma conta selecionada.")
-        return None
-
-async def main_async():
+def main():
     while True:
         print("\n--- Menu Principal ---")
-        menu_options = [
-            ("1", "Adicionar nova conta Telegram"),
-            ("2", "Seleccionar e usar conta existente"),
-            ("3", "Sair")
-        ]
-        
-        choice = await radiolist_dialog(
-            title="Menu Principal",
-            text="Escolha uma opção:",
-            values=menu_options
-        ).run_async() # Usando run_async()
+        print("1. Adicionar nova conta Telegram")
+        print("2. Selecionar e usar conta existente")
+        print("3. Sair")
+
+        choice = input("Escolha uma opção: ")
 
         if choice == '1':
-            await add_new_account_async()
+            add_new_account()
         elif choice == '2':
-            selected_account = await select_account_async()
+            selected_account = select_account()
             if selected_account:
                 api_id = selected_account["api_id"]
                 api_hash = selected_account["api_hash"]
@@ -96,25 +82,20 @@ async def main_async():
 
                 while True:
                     print("\n--- Operações da Conta ---")
-                    op_options = [
-                        ("1", "Extrair membros de um grupo"),
-                        ("2", "Adicionar membros a um grupo"),
-                        ("3", "Voltar ao menu principal")
-                    ]
-                    op_choice = await radiolist_dialog(
-                        title="Operações da Conta",
-                        text="Escolha uma operação:",
-                        values=op_options
-                    ).run_async() # Usando run_async()
+                    print("1. Extrair membros de um grupo")
+                    print("2. Adicionar membros a um grupo")
+                    print("3. Voltar ao menu principal")
+
+                    op_choice = input("Escolha uma operação: ")
 
                     if op_choice == '1':
                         print("Executando script de extração de membros...")
-                        await extract_members(api_id, api_hash, phone)
-                        break
+                        asyncio.run(extract_members(api_id, api_hash, phone))
+                        break # Retorna ao menu principal após a conclusão
                     elif op_choice == '2':
                         print("Executando script de adição de membros...")
-                        await add_members(api_id, api_hash, phone)
-                        break
+                        asyncio.run(add_members(api_id, api_hash, phone))
+                        break # Retorna ao menu principal após a conclusão
                     elif op_choice == '3':
                         break
                     else:
@@ -126,6 +107,6 @@ async def main_async():
             print("Opção inválida. Por favor, tente novamente.")
 
 if __name__ == '__main__':
-    asyncio.run(main_async())
+    main()
 
 
