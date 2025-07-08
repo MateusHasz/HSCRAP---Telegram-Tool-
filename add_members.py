@@ -7,8 +7,8 @@ from telethon.tl.functions.channels import InviteToChannelRequest
 from telethon.errors import PeerFloodError, UserPrivacyRestrictedError, UserAlreadyParticipantError, FloodWaitError
 
 # Configuração de logging
-logging.basicConfig(filename=\'add_members_log.log\', level=logging.INFO, 
-                    format=\'%(asctime)s - %(levelname)s - %(message)s\')
+logging.basicConfig(filename='add_members_log.log', level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def add_members(api_id, api_hash, phone):
     client = TelegramClient(phone, int(api_id), api_hash)
@@ -32,12 +32,12 @@ async def add_members(api_id, api_hash, phone):
             target_entity = await client.get_entity(int(target_group_input))
     except Exception as e:
         print(f"Erro ao obter a entidade do grupo de destino: {e}")
-        logging.error(f"Erro ao obter a entidade do grupo de destino \'{target_group_input}\'": {e}")
+        logging.error(f"Erro ao obter a entidade do grupo de destino '{target_group_input}': {e}")
         return
 
-    if not hasattr(target_entity, \'participants_count\'):
+    if not hasattr(target_entity, 'participants_count'):
         print("A entidade fornecida não é um grupo ou canal válido para adicionar membros.")
-        logging.warning(f"Entidade \'{target_group_input}\' não é um grupo ou canal válido.")
+        logging.warning(f"Entidade '{target_group_input}' não é um grupo ou canal válido.")
         return
 
     print(f"Adicionando membros ao grupo: {target_entity.title} ({target_entity.id})")
