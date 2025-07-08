@@ -4,7 +4,9 @@ from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.types import ChannelParticipantsSearch
 from telethon.tl.functions.messages import GetDialogsRequest
 from telethon.tl.types import InputPeerEmpty
-from prompt_toolkit.shortcuts import radiolist_dialog, checkboxlist_dialog
+
+# Removendo a importação de prompt_toolkit
+# from prompt_toolkit.shortcuts import radiolist_dialog, checkboxlist_dialog
 
 async def extract_members(api_id, api_hash, phone):
     client = TelegramClient(phone, int(api_id), api_hash)
@@ -39,22 +41,35 @@ async def extract_members(api_id, api_hash, phone):
         except:
             continue
 
-    print("\nSelecione os grupos/canais para extrair membros:")
+    print("\nSelecione os grupos/canals para extrair membros:")
     
     group_options = []
     for i, g in enumerate(groups):
         group_options.append((g, g.title))
+        print(f"{i + 1}. {g.title}") # Adicionado para exibir as opções no console
 
     if not group_options:
         print("Nenhum grupo ou canal encontrado para extração.")
         await client.run_until_disconnected()
         return
 
-    selected_group_entities = checkboxlist_dialog(
-        title="Selecionar Grupos/Canais",
-        text="Escolha os grupos/canais para extrair membros (use espaço para selecionar/desselecionar, Enter para confirmar):",
-        values=group_options
-    ).run()
+    # Substituindo checkboxlist_dialog por input simples
+    while True:
+        try:
+            choice_str = input("Escolha os números dos grupos/canais separados por vírgula (ex: 1,3,5): ")
+            choices = [int(c.strip()) for c in choice_str.split(',')]
+            selected_group_entities = []
+            for c in choices:
+                if 1 <= c <= len(groups):
+                    selected_group_entities.append(groups[c - 1])
+                else:
+                    print(f"Opção inválida: {c}. Por favor, digite números válidos.")
+                    selected_group_entities = [] # Limpa a seleção se houver erro
+                    break
+            if selected_group_entities:
+                break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite números separados por vírgula.")
 
     if not selected_group_entities:
         print("Nenhum grupo/canal selecionado. Operação cancelada.")
