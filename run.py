@@ -71,7 +71,7 @@ def select_account():
         print("Nenhuma conta selecionada.")
         return None
 
-def main():
+async def main_async(): # Renomeado para async
     while True:
         print("\n--- Menu Principal ---")
         menu_options = [
@@ -110,11 +110,11 @@ def main():
 
                     if op_choice == '1':
                         print("Executando script de extração de membros...")
-                        asyncio.run(extract_members(api_id, api_hash, phone))
+                        await extract_members(api_id, api_hash, phone) # Await direto
                         break
                     elif op_choice == '2':
                         print("Executando script de adição de membros...")
-                        asyncio.run(add_members(api_id, api_hash, phone))
+                        await add_members(api_id, api_hash, phone) # Await direto
                         break
                     elif op_choice == '3':
                         break
@@ -127,6 +127,6 @@ def main():
             print("Opção inválida. Por favor, tente novamente.")
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main_async())
 
 
